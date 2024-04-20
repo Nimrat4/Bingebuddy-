@@ -17,25 +17,44 @@ def start_page():
     st.image("the.jpg", use_column_width=True)
     st.title("Welcome to Binge Buddy")
     if st.button("Get Started"):
-        st.session_state["page"] = "recommender_page" 
+        st.session_state["page"] = "Recommender"
     return False
 
 # Recommender page for collaborative filtering (same as before)
 def recommender_page():
-    st.header("Movie Recommender System")
-    select_value = st.selectbox("Select movie from dropdown", movies_list)
+    st.header("Series Recommender System")
+    select_value = st.selectbox("Select series from dropdown", movies_list)
  
     if st.button("Show Recommendations"):
         movie_names = recommend(select_value)
-        st.subheader("Recommended Movies:")
+        st.subheader("Recommended Series:")
         for movie_name in movie_names:
             st.write(movie_name)
  
     if st.button("View Details"):
         selected_movie = st.selectbox("Select a movie to view details:", movies_list)
         movie_details = movies[movies['title'] == selected_movie]
-        st.subheader("Selected Movie Details:")
+        st.subheader("Selected Series Details:")
         st.write(movie_details)
+def recommend_based_on_demographics(age, gender, country):
+  # Example weights for age, gender, and country (adjust as needed)
+  weights = {'age': 0.5, 'gender': 0.3, 'country': 0.2}
+
+  # Mock-up demographic scoring (replace with your actual logic)
+  demo_score = 0.0
+  demo_score += (age - 25) * weights['age']  # Adjust baseline age and weight
+  if gender.lower() == "male":
+    demo_score += weights['gender']  # Adjust weight for gender
+  # Add logic for country (consider user preferences or regional popularity)
+
+  # Random noise to simulate score variation (replace with actual scoring)
+  demo_score += np.random.rand() * 0.1
+
+  # Combine demo score and IMDB rating for recommendations
+  data['demo_score'] = demo_score
+  recommendations = data.sort_values(by=['demo_score', 'IMDB Rating'], ascending=[False, False]).head(10)[['title', 'IMDB Rating']]
+
+  return recommendations
 
 # Content-based recommender page
 import pandas as pd
@@ -76,10 +95,12 @@ def content_based_page():
     """
     Streamlit app layout and logic for content-based recommendations
     """
-    st.title("Movie Recommendation System - Content-Based")
+    st.title("Series Recommendation System - Content-Based")
 
     # User input for series title
     user_series = st.text_input("Enter the name of a series you like:")
+    gender_options = ("Male", "Female", "Non-binary", "Prefer Not to Say")
+    user_gender = st.selectbox("Select your preferred gender for recommendations:", gender_options)
 
     if st.button("Recommend"):
         recommendations = recommend_content_based(user_series)
@@ -88,24 +109,41 @@ def content_based_page():
             st.table(recommendations)
         else:
             st.warning("No recommendations found for the entered series title.")
+def page3():
+  st.title("Series Recommendation System")
 
+  # Collect user inputs
+  age = st.number_input("Enter your age: ")
+  gender = st.selectbox("Select your gender:", ["Male", "Female", "Other"])
+  country = st.text_input("Enter your country: ")
+
+  # Recommend movies based on user input
+  if st.button("Recommend Series"):
+    recommendations = recommend_based_on_demographics(age, gender, country)
+    if not recommendations.empty:
+      st.subheader("Recommendations for you based on demographics:")
+      st.dataframe(recommendations)
+    else:
+      st.warning("No recommendations found based on your demographics.")
 
 # Main function
 def main():
   """
   Main function to handle navigation and call appropriate recommendation pages
   """
-  page = st.sidebar.radio("Navigation", ["Start", "Recommender", "Content-Based"])
+  page = st.sidebar.radio("Navigation", ["Start", "Recommender", "Content-Based","Demographic-Based"])
 
   if page == "Start":
     if start_page():
-      return  # Exit after start page interaction
+       recommender_page()  # Exit after start page interaction
 
   if page == "Recommender":
     recommender_page()
 
   if page == "Content-Based":
     content_based_page()
+  if page == "Demographic-Based":
+    page3()
 
 if __name__ == "__main__":
   main()
